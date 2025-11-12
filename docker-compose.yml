@@ -1,0 +1,95 @@
+services:
+  artemis:
+    image: quay.io/artemiscloud/activemq-artemis-broker:latest
+    container_name: artemis
+    environment:
+      AMQ_USER: admin
+      AMQ_PASSWORD: admin
+      AMQ_EXTRA_ARGS: "--relax-jolokia"
+    ports:
+      # Host ports changed to avoid conflicts with any local broker already running on 61616/8161
+      - "61617:61616"
+      - "8162:8161"
+
+  rule-service:
+    build:
+      context: ../rule-service
+      dockerfile: Dockerfile
+    container_name: rule-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      - artemis
+    environment:
+      - SPRING_PROFILES_ACTIVE=default
+      - ARTEMIS_BROKER_URL=tcp://artemis:61616
+      - ARTEMIS_USER=admin
+      - ARTEMIS_PASSWORD=admin
+      # Also set Spring-compatible env vars (dots -> underscores) so the property is available early
+      - SPRING_ARTEMIS_BROKER_URL=tcp://artemis:61616
+      - SPRING_ARTEMIS_USER=admin
+      - SPRING_ARTEMIS_PASSWORD=admin
+      # Also set classic ActiveMQ env var in case the client on the classpath uses that
+      - SPRING_ACTIVEMQ_BROKER_URL=tcp://artemis:61616
+      - SPRING_ACTIVEMQ_USER=admin
+      - SPRING_ACTIVEMQ_PASSWORD=admin
+
+  notification-service:
+    build:
+      context: ../notification-service
+      dockerfile: Dockerfile
+    container_name: notification-service
+    ports:
+      - "8084:8084"
+    depends_on:
+      - artemis
+    environment:
+      - ARTEMIS_BROKER_URL=tcp://artemis:61616
+      - ARTEMIS_USER=admin
+      - ARTEMIS_PASSWORD=admin
+      - SPRING_ARTEMIS_BROKER_URL=tcp://artemis:61616
+      - SPRING_ARTEMIS_USER=admin
+      - SPRING_ARTEMIS_PASSWORD=admin
+      - SPRING_ACTIVEMQ_BROKER_URL=tcp://artemis:61616
+      - SPRING_ACTIVEMQ_USER=admin
+      - SPRING_ACTIVEMQ_PASSWORD=admin
+
+  trade-capture:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: trade-capture
+    ports:
+      - "8080:8080"
+    depends_on:
+      - artemis
+    environment:
+      - ARTEMIS_BROKER_URL=tcp://artemis:61616
+      - ARTEMIS_USER=admin
+      - ARTEMIS_PASSWORD=admin
+      - SPRING_ARTEMIS_BROKER_URL=tcp://artemis:61616
+      - SPRING_ARTEMIS_USER=admin
+      - SPRING_ARTEMIS_PASSWORD=admin
+      - SPRING_ACTIVEMQ_BROKER_URL=tcp://artemis:61616
+      - SPRING_ACTIVEMQ_USER=admin
+      - SPRING_ACTIVEMQ_PASSWORD=admin
+
+  fraud-service:
+    build:
+      context: ../Fraud-Detection-MS-main
+      dockerfile: Dockerfile
+    container_name: fraud-service
+    ports:
+      - "8081:8081"
+    depends_on:
+      - artemis
+    environment:
+      - ARTEMIS_BROKER_URL=tcp://artemis:61616
+      - ARTEMIS_USER=admin
+      - ARTEMIS_PASSWORD=admin
+      - SPRING_ARTEMIS_BROKER_URL=tcp://artemis:61616
+      - SPRING_ARTEMIS_USER=admin
+      - SPRING_ARTEMIS_PASSWORD=admin
+      - SPRING_ACTIVEMQ_BROKER_URL=tcp://artemis:61616
+      - SPRING_ACTIVEMQ_USER=admin
+      - SPRING_ACTIVEMQ_PASSWORD=admin
