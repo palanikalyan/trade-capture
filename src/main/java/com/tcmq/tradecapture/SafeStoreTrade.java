@@ -12,7 +12,11 @@ public class SafeStoreTrade {
     @Column(columnDefinition = "TEXT")
     public String payloadJson;
 
+    // high-level processing state: RECEIVED, PERSISTED, PUBLISHED, NOTIFIED, FAILED
     public String status;
+
+    @Column(columnDefinition = "TEXT")
+    public String lastNotification;
 
     public LocalDateTime createdAt;
     public LocalDateTime updatedAt;

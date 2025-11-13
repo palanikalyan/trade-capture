@@ -18,8 +18,18 @@ public class MqSender {
         try {
             String json = mapper.writeValueAsString(msg);
 
-            jms.convertAndSend("fraud_requests", json);
-            jms.convertAndSend("rules_requests", json);
+            // send with correlation headers so receivers can correlate to original trade
+            jms.convertAndSend("fraud_requests", json, m -> {
+                m.setStringProperty("correlationId", msg.tradeId);
+                m.setStringProperty("originService", "trade-capture");
+                return m;
+            });
+
+            jms.convertAndSend("rules_requests", json, m -> {
+                m.setStringProperty("correlationId", msg.tradeId);
+                m.setStringProperty("originService", "trade-capture");
+                return m;
+            });
 
             System.out.println("Sent to fraud_requests & rules_requests → " + json);
 

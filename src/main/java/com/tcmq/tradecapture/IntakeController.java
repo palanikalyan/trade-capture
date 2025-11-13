@@ -26,14 +26,21 @@ public class IntakeController {
         SafeStoreTrade t = new SafeStoreTrade();
         t.tradeId = msg.tradeId;
         t.payloadJson = mapper.writeValueAsString(msg);
-        t.status = "NEW";
+        t.status = "RECEIVED";
         t.createdAt = LocalDateTime.now();
         t.updatedAt = LocalDateTime.now();
         repo.save(t);
 
+        // after persisting mark as PERSISTED
+        t.status = "PERSISTED";
+        t.updatedAt = LocalDateTime.now();
+        repo.save(t);
+
+        // send JMS messages with correlation headers
         sender.send(msg);
 
-        t.status = "SENT";
+        // after successful send mark as PUBLISHED
+        t.status = "PUBLISHED";
         t.updatedAt = LocalDateTime.now();
         repo.save(t);
 
